@@ -1,0 +1,5 @@
+Flask
+Flask-Session
+azure-storage-blob
+azure-search-documents
+python-dotenv
