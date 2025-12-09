@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}AI Search{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h2 class="mb-4">AI-Powered Search</h2>
+        
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Search through all documents</h5>
+                <form id="searchForm">
+                    <div class="mb-3">
+                        <input type="text" class="form-control" id="searchQuery" 
+                               placeholder="e.g., calculus derivatives, machine learning notes..." required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Search</button>
+                </form>
+                
+                <div id="searchResults" class="mt-4">
+                    <p class="text-muted">AI Search will be implemented soon...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

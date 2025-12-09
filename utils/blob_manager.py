@@ -126,3 +126,103 @@ class BlobManager:
         except Exception as e:
             print(f"Error downloading file: {str(e)}")
             return None
+
+
+def create_folder(self, username, folder_name):
+    """Create a virtual folder by uploading a placeholder blob"""
+    try:
+        container_name = self._get_container_name(username)
+        # Create a placeholder file to represent the folder
+        blob_client = self.blob_service_client.get_blob_client(
+            container=container_name,
+            blob=f"{folder_name}/.placeholder"
+        )
+        blob_client.upload_blob(b"", overwrite=True)
+        return True, f"Folder '{folder_name}' created"
+    except Exception as e:
+        return False, f"Error creating folder: {str(e)}"
+
+
+def list_user_folders(self, username):
+    """List all folders (unique prefixes) in a user's container"""
+    try:
+        container_name = self._get_container_name(username)
+        container_client = self.blob_service_client.\
+            get_container_client(container_name)
+
+        blobs = container_client.list_blobs()
+        folders = set()
+
+        for blob in blobs:
+            # Extract folder name (everything before first /)
+            if '/' in blob.name:
+                folder = blob.name.split('/')[0]
+                folders.add(folder)
+
+        return sorted(list(folders))
+    except Exception as e:
+        print(f"Error listing folders: {str(e)}")
+        return []
+
+
+def list_files_in_folder(self, username, folder_name):
+    """List files in a specific folder"""
+    try:
+        container_name = self._get_container_name(username)
+        container_client = self.blob_service_client.get_container_client(container_name)
+
+        prefix = f"{folder_name}/"
+        blobs = container_client.list_blobs(name_starts_with=prefix)
+        files = []
+
+        for blob in blobs:
+            if blob.name.endswith('.placeholder'):
+                continue  # Skip placeholder files
+
+            files.append({
+                'name': blob.name.replace(prefix, ''),  # Remove folder prefix
+                'full_path': blob.name,
+                'size': blob.size,
+                'created': blob.creation_time,
+                'container': container_name,
+                'folder': folder_name
+            })
+
+        return files
+    except Exception as e:
+        print(f"Error listing files in folder: {str(e)}")
+        return []
+
+
+def upload_file_to_folder(self, username, file, filename, folder_name):
+    """Upload a file to a specific folder"""
+    try:
+        container_name = self._get_container_name(username)
+        blob_path = f"{folder_name}/{filename}"
+        blob_client = self.blob_service_client.get_blob_client(
+            container=container_name,
+            blob=blob_path
+        )
+        blob_client.upload_blob(file, overwrite=True)
+
+        return True, "File uploaded successfully"
+    except Exception as e:
+        return False, f"Error uploading file: {str(e)}"
+
+
+def delete_file_from_folder(self, username, folder_name, filename):
+    """Delete a file from a specific folder"""
+    try:
+        container_name = self._get_container_name(username)
+        blob_path = f"{folder_name}/{filename}"
+        blob_client = self.blob_service_client.get_blob_client(
+            container=container_name,
+            blob=blob_path
+        )
+        blob_client.delete_blob()
+
+        return True, "File deleted successfully"
+    except ResourceNotFoundError:
+        return False, "File not found"
+    except Exception as e:
+        return False, f"Error deleting file: {str(e)}"

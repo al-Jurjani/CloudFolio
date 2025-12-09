@@ -4,13 +4,26 @@ from functools import wraps
 from flask import session, redirect, url_for, flash
 
 
+# def load_users():
+#     """Load users from JSON file"""
+#     if not os.path.exists('users.json'):
+#         return {}
+
+#     with open('users.json', 'r') as f:
+#         return json.load(f)
 def load_users():
     """Load users from JSON file"""
     if not os.path.exists('users.json'):
         return {}
 
-    with open('users.json', 'r') as f:
-        return json.load(f)
+    try:
+        with open('users.json', 'r') as f:
+            content = f.read().strip()
+            if not content:  # File is empty
+                return {}
+            return json.loads(content)
+    except json.JSONDecodeError:
+        return {}
 
 
 def save_users(users):
