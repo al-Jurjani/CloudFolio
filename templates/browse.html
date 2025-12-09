@@ -12,6 +12,7 @@
             <div class="card-body">
                 <input type="text" id="userSearch" class="form-control" 
                        placeholder="Search for a user...">
+                <small class="text-muted">Type to filter users</small>
             </div>
         </div>
 
@@ -26,7 +27,7 @@
                                class="list-group-item list-group-item-action d-flex justify-content-between align-items-center user-item"
                                data-username="{{ user }}">
                                 <div>
-                                    <i class="bi bi-person-circle"></i> {{ user }}
+                                    {{ user }}
                                 </div>
                                 <span class="badge bg-primary rounded-pill">View Files →</span>
                             </a>
@@ -39,21 +40,29 @@
         </div>
     </div>
 </div>
+{% endblock %}
 
+{% block scripts %}
 <script>
-// Search functionality
-document.getElementById('userSearch').addEventListener('input', function(e) {
-    const searchTerm = e.target.value.toLowerCase();
-    const userItems = document.querySelectorAll('.user-item');
-    
-    userItems.forEach(item => {
-        const username = item.getAttribute('data-username').toLowerCase();
-        if (username.includes(searchTerm)) {
-            item.style.display = 'flex';
-        } else {
-            item.style.display = 'none';
-        }
+const searchInput = document.getElementById('userSearch');
+
+if (searchInput) {
+    searchInput.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        const userItems = document.querySelectorAll('.user-item');
+        
+        userItems.forEach(item => {
+            const username = item.getAttribute('data-username').toLowerCase();
+            
+            if (username.includes(searchTerm)) {
+                item.style.display = '';  // Show: reset to default
+                item.classList.remove('d-none');
+            } else {
+                item.style.display = 'none';  // Hide
+                item.classList.add('d-none');
+            }
+        });
     });
-});
+}
 </script>
 {% endblock %}
