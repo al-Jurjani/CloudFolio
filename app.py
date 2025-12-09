@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash, send_file
+from flask import Flask, render_template, request, redirect, url_for, session, flash, send_file, jsonify
 from flask_session import Session
 from config import Config
 from utils.auth import create_user, verify_user, login_required
@@ -71,7 +71,15 @@ def logout():
 @app.route('/upload', methods=['GET', 'POST'])
 @login_required
 def upload():
+    username = session['username']
+    
     if request.method == 'POST':
+        folder_name = request.form.get('folder_name')
+        
+        if not folder_name:
+            flash('Please select a folder', 'danger')
+            return redirect(url_for('upload'))
+        
         if 'file' not in request.files:
             flash('No file selected', 'danger')
             return redirect(url_for('upload'))
@@ -88,8 +96,7 @@ def upload():
             return redirect(url_for('upload'))
         
         # Upload to blob storage
-        username = session['username']
-        success, message = blob_manager.upload_file(username, file, file.filename)
+        success, message = blob_manager.upload_file_to_folder(username, file, file.filename, folder_name)
         
         if success:
             flash('File uploaded successfully!', 'success')
@@ -98,37 +105,83 @@ def upload():
         
         return redirect(url_for('upload'))
     
-    # GET request - show user's files
-    username = session['username']
-    files = blob_manager.list_user_files(username)
+    # GET request - show user's folders
+    folders = blob_manager.list_user_folders(username)
     
-    return render_template('upload.html', files=files)
+    return render_template('upload.html', folders=folders)
 
-@app.route('/delete/<filename>')
+@app.route('/create_folder', methods=['POST'])
 @login_required
-def delete_file(filename):
+def create_folder():
     username = session['username']
-    success, message = blob_manager.delete_file(username, filename)
+    folder_name = request.form.get('folder_name')
+    
+    if not folder_name:
+        flash('Folder name is required', 'danger')
+        return redirect(url_for('upload'))
+    
+    success, message = blob_manager.create_folder(username, folder_name)
+    
+    if success:
+        flash(message, 'success')
+    else:
+        flash(message, 'danger')
+    
+    return redirect(url_for('upload'))
+
+@app.route('/folder/<folder_name>')
+@login_required
+def view_folder(folder_name):
+    username = session['username']
+    files = blob_manager.list_files_in_folder(username, folder_name)
+    
+    return render_template('folder.html', folder_name=folder_name, files=files)
+
+@app.route('/delete/<folder_name>/<filename>')
+@login_required
+def delete_file(folder_name, filename):
+    username = session['username']
+    success, message = blob_manager.delete_file_from_folder(username, folder_name, filename)
     
     if success:
         flash('File deleted successfully!', 'success')
     else:
         flash(f'Delete failed: {message}', 'danger')
     
-    return redirect(url_for('upload'))
+    return redirect(url_for('view_folder', folder_name=folder_name))
 
 @app.route('/browse')
 @login_required
 def browse():
-    all_files = blob_manager.list_all_files()
-    return render_template('browse.html', files=all_files)
+    # List all users (containers)
+    containers = list(blob_manager.blob_service_client.list_containers())
+    users = [container.name for container in containers]
+    
+    return render_template('browse.html', users=users)
 
-@app.route('/download/<container>/<filename>')
+@app.route('/browse/<username>')
 @login_required
-def download_file(container, filename):
-    file_data = blob_manager.download_file(container, filename)
+def browse_user(username):
+    # Show folders for a specific user
+    folders = blob_manager.list_user_folders(username)
+    
+    return render_template('browse_user.html', username=username, folders=folders)
+
+@app.route('/browse/<username>/<folder_name>')
+@login_required
+def browse_folder(username, folder_name):
+    # Show files in a user's folder
+    files = blob_manager.list_files_in_folder(username, folder_name)
+    
+    return render_template('browse_folder.html', username=username, folder_name=folder_name, files=files)
+
+@app.route('/download/<container>/<path:filepath>')
+@login_required
+def download_file(container, filepath):
+    file_data = blob_manager.download_file(container, filepath)
     
     if file_data:
+        filename = filepath.split('/')[-1]  # Get just the filename
         return send_file(
             io.BytesIO(file_data),
             mimetype='application/pdf',

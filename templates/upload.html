@@ -7,11 +7,38 @@
     <div class="col-md-12">
         <h2 class="mb-4">My Files</h2>
         
-        <!-- Upload Form -->
+        <!-- Create Folder Form -->
         <div class="card mb-4">
             <div class="card-body">
-                <h5 class="card-title">Upload New File</h5>
+                <h5 class="card-title">Create New Folder</h5>
+                <form method="POST" action="{{ url_for('create_folder') }}">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <input type="text" class="form-control" name="folder_name" 
+                                   placeholder="Enter folder name (e.g., Calculus, Physics)" required>
+                        </div>
+                        <div class="col-md-4">
+                            <button type="submit" class="btn btn-secondary w-100">Create Folder</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Upload File Form -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Upload File to Folder</h5>
                 <form method="POST" action="{{ url_for('upload') }}" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="folder_name" class="form-label">Select Folder</label>
+                        <select class="form-select" name="folder_name" required>
+                            <option value="">-- Choose a folder --</option>
+                            {% for folder in folders %}
+                                <option value="{{ folder }}">{{ folder }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
                     <div class="mb-3">
                         <label for="file" class="form-label">Choose PDF file</label>
                         <input type="file" class="form-control" id="file" name="file" accept=".pdf" required>
@@ -21,41 +48,24 @@
             </div>
         </div>
 
-        <!-- Files List -->
+        <!-- Folders List -->
         <div class="card">
             <div class="card-body">
-                <h5 class="card-title">Your Files ({{ files|length }})</h5>
-                {% if files %}
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Filename</th>
-                                    <th>Size</th>
-                                    <th>Uploaded</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for file in files %}
-                                <tr>
-                                    <td>{{ file.name }}</td>
-                                    <td>{{ (file.size / 1024 / 1024)|round(2) }} MB</td>
-                                    <td>{{ file.created.strftime('%Y-%m-%d %H:%M') }}</td>
-                                    <td>
-                                        <a href="{{ url_for('download_file', container=file.container, filename=file.name) }}" 
-                                           class="btn btn-sm btn-success">Download</a>
-                                        <a href="{{ url_for('delete_file', filename=file.name) }}" 
-                                           class="btn btn-sm btn-danger"
-                                           onclick="return confirm('Are you sure you want to delete this file?')">Delete</a>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+                <h5 class="card-title">Your Folders ({{ folders|length }})</h5>
+                {% if folders %}
+                    <div class="list-group">
+                        {% for folder in folders %}
+                            <a href="{{ url_for('view_folder', folder_name=folder) }}" 
+                               class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                                <div>
+                                    <i class="bi bi-folder-fill"></i> {{ folder }}
+                                </div>
+                                <span class="badge bg-primary rounded-pill">View →</span>
+                            </a>
+                        {% endfor %}
                     </div>
                 {% else %}
-                    <p class="text-muted">No files uploaded yet. Upload your first file above!</p>
+                    <p class="text-muted">No folders yet. Create your first folder above!</p>
                 {% endif %}
             </div>
         </div>

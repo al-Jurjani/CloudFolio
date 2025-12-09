@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}{{ folder_name }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('upload') }}">My Files</a></li>
+                <li class="breadcrumb-item active">{{ folder_name }}</li>
+            </ol>
+        </nav>
+
+        <h2 class="mb-4">Folder: {{ folder_name }}</h2>
+        
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Files in {{ folder_name }} ({{ files|length }})</h5>
+                {% if files %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Filename</th>
+                                    <th>Size</th>
+                                    <th>Uploaded</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for file in files %}
+                                <tr>
+                                    <td>{{ file.name }}</td>
+                                    <td>{{ (file.size / 1024 / 1024)|round(2) }} MB</td>
+                                    <td>{{ file.created.strftime('%Y-%m-%d %H:%M') }}</td>
+                                    <td>
+                                        <a href="{{ url_for('download_file', container=file.container, filepath=file.full_path) }}" 
+                                           class="btn btn-sm btn-success">Download</a>
+                                        <a href="{{ url_for('delete_file', folder_name=folder_name, filename=file.name) }}" 
+                                           class="btn btn-sm btn-danger"
+                                           onclick="return confirm('Are you sure you want to delete this file?')">Delete</a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">This folder is empty. Upload files from the "My Files" page.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

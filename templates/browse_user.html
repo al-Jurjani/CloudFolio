@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}{{ username }}'s Files{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('browse') }}">Browse</a></li>
+                <li class="breadcrumb-item active">{{ username }}</li>
+            </ol>
+        </nav>
+
+        <h2 class="mb-4">{{ username }}'s Folders</h2>
+        
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Folders ({{ folders|length }})</h5>
+                {% if folders %}
+                    <div class="list-group">
+                        {% for folder in folders %}
+                            <a href="{{ url_for('browse_folder', username=username, folder_name=folder) }}" 
+                               class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                                <div>
+                                    <i class="bi bi-folder-fill"></i> {{ folder }}
+                                </div>
+                                <span class="badge bg-primary rounded-pill">View Files →</span>
+                            </a>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted">This user has no folders yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

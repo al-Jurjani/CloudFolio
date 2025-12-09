@@ -9,15 +9,16 @@ from flask import session, redirect, url_for, flash
 #     if not os.path.exists('users.json'):
 #         return {}
 
+
 #     with open('users.json', 'r') as f:
 #         return json.load(f)
 def load_users():
     """Load users from JSON file"""
-    if not os.path.exists('users.json'):
+    if not os.path.exists("users.json"):
         return {}
 
     try:
-        with open('users.json', 'r') as f:
+        with open("users.json", "r") as f:
             content = f.read().strip()
             if not content:  # File is empty
                 return {}
@@ -28,7 +29,7 @@ def load_users():
 
 def save_users(users):
     """Save users to JSON file"""
-    with open('users.json', 'w') as f:
+    with open("users.json", "w") as f:
         json.dump(users, f, indent=2)
 
 
@@ -52,10 +53,12 @@ def verify_user(username, password):
 
 def login_required(f):
     """Decorator to require login"""
+
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if 'username' not in session:
-            flash('Please login to access this page', 'warning')
-            return redirect(url_for('login'))
+        if "username" not in session:
+            flash("Please login to access this page", "warning")
+            return redirect(url_for("login"))
         return f(*args, **kwargs)
+
     return decorated_function
