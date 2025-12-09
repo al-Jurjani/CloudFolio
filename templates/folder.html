@@ -36,10 +36,17 @@
                                     <td>{{ file.created.strftime('%Y-%m-%d %H:%M') }}</td>
                                     <td>
                                         <a href="{{ url_for('download_file', container=file.container, filepath=file.full_path) }}" 
-                                           class="btn btn-sm btn-success">Download</a>
+                                           class="btn btn-sm btn-success download-btn"
+                                           data-filename="{{ file.name }}">Download</a>
                                         <a href="{{ url_for('delete_file', folder_name=folder_name, filename=file.name) }}" 
                                            class="btn btn-sm btn-danger"
                                            onclick="return confirm('Are you sure you want to delete this file?')">Delete</a>
+                                        <span class="spinner-border spinner-border-sm ms-2" 
+                                              role="status" 
+                                              style="display: none;"
+                                              id="spinner-{{ loop.index }}">
+                                            <span class="visually-hidden">Downloading...</span>
+                                        </span>
                                     </td>
                                 </tr>
                                 {% endfor %}
@@ -53,4 +60,85 @@
         </div>
     </div>
 </div>
+
+<script>
+// Add download progress indicator
+// document.querySelectorAll('.download-btn').forEach((btn, index) => {
+//     btn.addEventListener('click', function(e) {
+//         const spinner = document.getElementById('spinner-' + (index + 1));
+//         spinner.style.display = 'inline-block';
+//         btn.classList.add('disabled');
+//         btn.textContent = 'Downloading...';
+        
+//         // The actual download will happen, spinner will disappear when page reloads/changes
+//         // For better UX, we could use fetch() and blob download, but this is simpler
+//     });
+// });
+// document.querySelectorAll('.download-btn').forEach((btn, index) => {
+//     btn.addEventListener('click', function(e) {
+//         const spinner = document.getElementById('spinner-' + (index + 1));
+//         const originalText = btn.textContent;
+        
+//         spinner.style.display = 'inline-block';
+//         btn.classList.add('disabled');
+//         btn.textContent = 'Downloading...';
+        
+//         // Reset after download completes (estimated based on typical download time)
+//         setTimeout(() => {
+//             spinner.style.display = 'none';
+//             btn.classList.remove('disabled');
+//             btn.textContent = originalText;
+//         }, 3000); // 3 seconds - adjust based on typical file sizes
+//     });
+// });
+
+document.querySelectorAll('.download-btn').forEach((btn, index) => {
+    btn.addEventListener('click', function(e) {
+        e.preventDefault(); // Prevent default link behavior
+        
+        const url = btn.getAttribute('href');
+        const spinner = document.getElementById('spinner-' + (index + 1));
+        const originalText = btn.textContent;
+        
+        // Show loading state
+        spinner.style.display = 'inline-block';
+        btn.classList.add('disabled');
+        btn.textContent = 'Downloading...';
+        
+        // Fetch the file
+        fetch(url)
+            .then(response => {
+                if (!response.ok) throw new Error('Download failed');
+                return response.blob();
+            })
+            .then(blob => {
+                // Create a temporary download link
+                const downloadUrl = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = downloadUrl;
+                a.download = btn.getAttribute('data-filename');
+                document.body.appendChild(a);
+                a.click();
+                
+                // Cleanup
+                window.URL.revokeObjectURL(downloadUrl);
+                document.body.removeChild(a);
+                
+                // Reset button state
+                spinner.style.display = 'none';
+                btn.classList.remove('disabled');
+                btn.textContent = originalText;
+            })
+            .catch(error => {
+                console.error('Download error:', error);
+                alert('Download failed. Please try again.');
+                
+                // Reset button state on error
+                spinner.style.display = 'none';
+                btn.classList.remove('disabled');
+                btn.textContent = originalText;
+            });
+    });
+});
+</script>
 {% endblock %}
