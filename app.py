@@ -95,11 +95,36 @@ def upload():
             flash('Only PDF files are allowed', 'danger')
             return redirect(url_for('upload'))
         
+        # Read file content for indexing
+        file_content = file.read()
+        file.seek(0)  # Reset file pointer for upload
+        
         # Upload to blob storage
         success, message = blob_manager.upload_file_to_folder(username, file, file.filename, folder_name)
         
         if success:
-            flash('File uploaded successfully!', 'success')
+            # Extract text and index for search
+            from utils.pdf_extractor import extract_text_from_pdf
+            from utils.search_manager import SearchManager
+            
+            text_content = extract_text_from_pdf(file_content)
+            
+            if text_content:
+                search_manager = SearchManager()
+                container_name = blob_manager._get_container_name(username)
+                filepath = f"{folder_name}/{file.filename}"
+                
+                search_manager.index_document(
+                    filename=file.filename,
+                    content=text_content,
+                    owner=username,
+                    folder=folder_name,
+                    container=container_name,
+                    filepath=filepath
+                )
+                flash('File uploaded and indexed successfully!', 'success')
+            else:
+                flash('File uploaded but could not be indexed for search', 'warning')
         else:
             flash(f'Upload failed: {message}', 'danger')
         
@@ -192,11 +217,21 @@ def download_file(container, filepath):
         flash('File not found', 'danger')
         return redirect(url_for('browse'))
 
-@app.route('/search')
+@app.route('/search', methods=['GET', 'POST'])
 @login_required
 def search():
-    # We'll implement AI search later
-    return render_template('search.html')
+    results = []
+    query = ""
+    
+    if request.method == 'POST':
+        query = request.form.get('query', '')
+        
+        if query:
+            from utils.search_manager import SearchManager
+            search_manager = SearchManager()
+            results = search_manager.search_documents(query, top=20)
+    
+    return render_template('search.html', results=results, query=query)
 
 
 if __name__ == '__main__':

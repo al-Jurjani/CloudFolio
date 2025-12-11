@@ -8,3 +8,4 @@ venv/
 generate_secret.py
 test_blob.py
 flask_session/
+test_search.py
