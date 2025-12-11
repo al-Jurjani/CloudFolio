@@ -69,13 +69,20 @@
                 {% if folders %}
                     <div class="list-group">
                         {% for folder in folders %}
-                            <a href="{{ url_for('view_folder', folder_name=folder) }}" 
-                               class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
                                 <div>
-                                    <i class="bi bi-folder-fill"></i> {{ folder }}
+                                    <a href="{{ url_for('view_folder', folder_name=folder) }}" class="text-decoration-none">
+                                        <i class="bi bi-folder-fill"></i> {{ folder }}
+                                    </a>
                                 </div>
-                                <span class="badge bg-primary rounded-pill">View →</span>
-                            </a>
+                                <div>
+                                    <a href="{{ url_for('view_folder', folder_name=folder) }}" 
+                                    class="btn btn-sm btn-primary me-2">View</a>
+                                    <a href="{{ url_for('delete_folder', folder_name=folder) }}" 
+                                    class="btn btn-sm btn-danger"
+                                    onclick="return confirm('Are you sure you want to delete this folder and all its files?')">Delete</a>
+                                </div>
+                            </div>
                         {% endfor %}
                     </div>
                 {% else %}

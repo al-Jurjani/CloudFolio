@@ -276,6 +276,18 @@ def search():
     
     return render_template('search.html', results=results, query=query)
 
+@app.route('/delete_folder/<folder_name>')
+@login_required
+def delete_folder(folder_name):
+    username = session['username']
+    success, message = blob_manager.delete_folder(username, folder_name)
+    
+    if success:
+        flash(message, 'success')
+    else:
+        flash(f'Delete failed: {message}', 'danger')
+    
+    return redirect(url_for('upload'))
 
 if __name__ == '__main__':
     app.run(debug=True)

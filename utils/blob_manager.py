@@ -102,22 +102,22 @@ class BlobManager:
         except Exception as e:
             return False, f"Error uploading file: {str(e)}"
 
-    def delete_file_from_folder(self, username, folder_name, filename):
-        """Delete a file from a specific folder"""
-        try:
-            container_name = self._get_container_name(username)
-            blob_path = f"{folder_name}/{filename}"
-            blob_client = self.blob_service_client.get_blob_client(
-                container=container_name,
-                blob=blob_path
-            )
-            blob_client.delete_blob()
+    # def delete_file_from_folder(self, username, folder_name, filename):
+    #     """Delete a file from a specific folder"""
+    #     try:
+    #         container_name = self._get_container_name(username)
+    #         blob_path = f"{folder_name}/{filename}"
+    #         blob_client = self.blob_service_client.get_blob_client(
+    #             container=container_name,
+    #             blob=blob_path
+    #         )
+    #         blob_client.delete_blob()
             
-            return True, "File deleted successfully"
-        except ResourceNotFoundError:
-            return False, "File not found"
-        except Exception as e:
-            return False, f"Error deleting file: {str(e)}"
+    #         return True, "File deleted successfully"
+    #     except ResourceNotFoundError:
+    #         return False, "File not found"
+    #     except Exception as e:
+    #         return False, f"Error deleting file: {str(e)}"
     
     def upload_file(self, username, file, filename):
         """Upload a file to user's container"""
@@ -218,3 +218,57 @@ class BlobManager:
         except Exception as e:
             print(f"Error downloading file: {str(e)}")
             return None
+
+    def delete_file_from_folder(self, username, folder_name, filename):
+        """Delete a file from a specific folder"""
+        try:
+            container_name = self._get_container_name(username)
+            blob_path = f"{folder_name}/{filename}"
+            blob_client = self.blob_service_client.get_blob_client(
+                container=container_name,
+                blob=blob_path
+            )
+            blob_client.delete_blob()
+            
+            # Also delete from search index
+            from utils.search_manager import SearchManager
+            search_manager = SearchManager()
+            search_manager.delete_document_by_filepath(container_name, blob_path)
+            
+            return True, "File deleted successfully"
+        except ResourceNotFoundError:
+            return False, "File not found"
+        except Exception as e:
+            return False, f"Error deleting file: {str(e)}"
+
+    def delete_folder(self, username, folder_name):
+        """Delete a folder and all its contents"""
+        try:
+            container_name = self._get_container_name(username)
+            container_client = self.blob_service_client.get_container_client(container_name)
+            
+            # List all blobs in the folder
+            prefix = f"{folder_name}/"
+            blobs = container_client.list_blobs(name_starts_with=prefix)
+            
+            # Delete from search index first
+            from utils.search_manager import SearchManager
+            search_manager = SearchManager()
+            
+            deleted_count = 0
+            for blob in blobs:
+                # Delete from blob storage
+                blob_client = self.blob_service_client.get_blob_client(
+                    container=container_name,
+                    blob=blob.name
+                )
+                blob_client.delete_blob()
+                
+                # Delete from search index
+                search_manager.delete_document_by_filepath(container_name, blob.name)
+                
+                deleted_count += 1
+            
+            return True, f"Folder deleted with {deleted_count} files"
+        except Exception as e:
+            return False, f"Error deleting folder: {str(e)}"

@@ -49,8 +49,8 @@ class SearchManager:
                 SearchableField(name="content", type=SearchFieldDataType.String),
                 SimpleField(name="owner", type=SearchFieldDataType.String, filterable=True),
                 SimpleField(name="folder", type=SearchFieldDataType.String, filterable=True),
-                SimpleField(name="container", type=SearchFieldDataType.String),
-                SimpleField(name="filepath", type=SearchFieldDataType.String),
+                SimpleField(name="container", type=SearchFieldDataType.String, filterable=True),
+                SimpleField(name="filepath", type=SearchFieldDataType.String, filterable=True),  # ADDED filterable=True
             ]
             
             index = SearchIndex(name=self.index_name, fields=fields)
@@ -108,4 +108,26 @@ class SearchManager:
             self.search_client.delete_documents(documents=[{"id": doc_id}])
             return True, "Document deleted from index"
         except Exception as e:
+            return False, f"Error deleting document: {str(e)}"
+    
+    def delete_document_by_filepath(self, container, filepath):
+        """Delete a document from the index by container and filepath"""
+        try:
+            # Search for the document first to get its ID
+            results = self.search_client.search(
+                search_text="*",
+                filter=f"container eq '{container}' and filepath eq '{filepath}'",
+                top=1
+            )
+            
+            for result in results:
+                doc_id = result['id']
+                self.search_client.delete_documents(documents=[{"id": doc_id}])
+                print(f"Deleted document {doc_id} from search index")
+                return True, "Document deleted from index"
+            
+            # Document not found in index (might not have been indexed)
+            return True, "Document not in index (no action needed)"
+        except Exception as e:
+            print(f"Error deleting from search index: {str(e)}")
             return False, f"Error deleting document: {str(e)}"
