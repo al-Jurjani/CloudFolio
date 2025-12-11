@@ -14,8 +14,51 @@ blob_manager = BlobManager()
 @app.route('/')
 def index():
     if 'username' in session:
-        return redirect(url_for('browse'))
+        return redirect(url_for('dashboard'))
     return redirect(url_for('login'))
+
+@app.route('/dashboard')
+@login_required
+def dashboard():
+    from utils.auth import load_users
+    
+    # Get total users
+    users = load_users()
+    total_users = len(users)
+    
+    # Get total files and storage
+    all_files = blob_manager.list_all_files()
+    total_files = len(all_files)
+    total_storage = sum(file['size'] for file in all_files)
+    total_storage_mb = total_storage / (1024 * 1024)
+    
+    # Get user's stats
+    username = session['username']
+    user_files = blob_manager.list_user_files(username)
+    user_file_count = len(user_files)
+    user_storage = sum(file['size'] for file in user_files)
+    user_storage_mb = user_storage / (1024 * 1024)
+    
+    # Get recent uploads (last 10)
+    recent_uploads = sorted(all_files, key=lambda x: x['created'], reverse=True)[:10]
+    
+    # Get most active folders
+    folder_counts = {}
+    for file in all_files:
+        if '/' in file['name']:
+            folder = file['name'].split('/')[0]
+            folder_counts[folder] = folder_counts.get(folder, 0) + 1
+    
+    top_folders = sorted(folder_counts.items(), key=lambda x: x[1], reverse=True)[:5]
+    
+    return render_template('dashboard.html',
+                         total_users=total_users,
+                         total_files=total_files,
+                         total_storage_mb=round(total_storage_mb, 2),
+                         user_file_count=user_file_count,
+                         user_storage_mb=round(user_storage_mb, 2),
+                         recent_uploads=recent_uploads,
+                         top_folders=top_folders)
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
