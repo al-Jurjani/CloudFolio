@@ -78,24 +78,35 @@ class SearchManager:
             return False, f"Error indexing document: {str(e)}"
     
     def search_documents(self, query, top=10):
-        """Search for documents"""
+        """Search for documents with highlighted snippets"""
         try:
             results = self.search_client.search(
                 search_text=query,
                 top=top,
-                include_total_count=True
+                include_total_count=True,
+                highlight_fields="content-3",  # Get 3 highlights from content field
+                highlight_pre_tag="<mark>",
+                highlight_post_tag="</mark>"
             )
             
             documents = []
             for result in results:
-                documents.append({
+                doc = {
                     'filename': result['filename'],
                     'owner': result['owner'],
                     'folder': result['folder'],
                     'container': result['container'],
                     'filepath': result['filepath'],
                     'score': result['@search.score']
-                })
+                }
+                
+                # Add highlights if available
+                if '@search.highlights' in result and 'content' in result['@search.highlights']:
+                    doc['highlights'] = result['@search.highlights']['content']
+                else:
+                    doc['highlights'] = []
+                
+                documents.append(doc)
             
             return documents
         except Exception as e:
