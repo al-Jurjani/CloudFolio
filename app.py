@@ -15,7 +15,7 @@ blob_manager = BlobManager()
 def index():
     if 'username' in session:
         return redirect(url_for('dashboard'))
-    return redirect(url_for('login'))
+    return render_template('landing.html')
 
 @app.route('/dashboard')
 @login_required
